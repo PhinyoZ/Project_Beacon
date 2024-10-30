@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="th">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Beacon</title>
+    <link
+      href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600&display=swap"
+      rel="stylesheet"
+    />
+    <link href="styles.css" rel="stylesheet" />
+  </head>
+
+  <body>
+    <!-- Navigation Bar -->
+    <nav class="navbar navbar-expand-lg navbar-custom">
+      <a class="navbar-brand" href="/">Beacon</a>
+      <button
+        class="navbar-toggler"
+        type="button"
+        data-toggle="collapse"
+        data-target="#navbarNav"
+        aria-controls="navbarNav"
+        aria-expanded="false"
+        aria-label="Toggle navigation"
+      >
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav">
+          <li class="nav-item active">
+            <a class="nav-link" href="/">รายชื่อนักศึกษา</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="/ball_user.html"
+              >นักศึกษาที่อยู่ในหอพัก</a
+            >
+          </li>
+          <li class="nav-item">
+            <a
+              class="nav-link"
+              href="https://mediumaquamarine-porcupine-998187.hostingersite.com/"
+              >ย้อนกลับไปยังเว็บไซต์</a
+            >
+          </li>
+        </ul>
+      </div>
+    </nav>
+
+    <div class="container mt-5">
+      <div class="row justify-content-center">
+        <div class="col-lg-8">
+          <h1 class="mb-4 text-center text-primary">รายชื่อนักศึกษา</h1>
+          <div id="events" class="list-group">
+            <div
+              class="list-group-item p-4 mb-3 rounded shadow-sm d-flex align-items-center"
+            >
+              <img
+                src="https://www.creativefabrica.com/wp-content/uploads/2021/07/05/Chatbot-Logo-Modern-bot-logo-Graphics-14298242-1-1-580x435.jpg"
+                class="profile-img rounded-circle mr-3"
+                alt="รูปโปรไฟล์"
+              />
+              <div>
+                <!-- <h5 class="mb-1">กำลังโหลด.../h5>
+                <p class="mb-1">รายชื่อนักศึกษา/p> -->
+                <p class="status-in-dorm">กำลังโหลดรายชื่อนักศึกษา...</p>
+              </div>
+            </div>
+            <!-- เพิ่มข้อมูลนักศึกษาอื่นๆ ที่นี่ -->
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      async function fetchEvents() {
+        try {
+          const response = await fetch("/events");
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+          const events = await response.json();
+          console.log("Events data fetched:", events);
+
+          const groupedEvents = events.reduce((acc, event) => {
+            if (!acc[event.user_id]) {
+              acc[event.user_id] = {
+                user_id: event.user_id,
+                displayName: event.displayName || "ไม่ทราบชื่อผู้ใช้",
+                pictureUrl: event.pictureUrl || "default.jpg", // ใช้รูปภาพเริ่มต้นหากไม่มีรูป
+                roomNumber: event.room_number || "ยังไม่ได้ลงทะเบียน", // หากไม่มี room_number ให้แสดงว่า "ยังไม่ได้ลงทะเบียน"
+                dms: [],
+              };
+            }
+            acc[event.user_id].dms.push({
+              dm: event.dm,
+              latest: event.latest,
+            });
+            return acc;
+          }, {});
+
+          const eventsDiv = document.getElementById("events");
+          eventsDiv.innerHTML = "";
+
+          for (const user of Object.values(groupedEvents)) {
+            const status = await calculateStatus(user.user_id);
+
+            const userDiv = document.createElement("div");
+            userDiv.classList.add(
+              "list-group-item",
+              "list-group-item-action",
+              "d-flex",
+              "align-items-center"
+            );
+
+            const dmMeaning = {
+              a0a3b33145fe: "ทางขึ้นบรรได เข้าหอพัก",
+              a0a3b32fadf2: "ประตูทางเข้า ออกหอพัก",
+            };
+
+            const dmClass = (dm) =>
+              dm === "a0a3b33145fe" ? "dm-entrance" : "dm-exit";
+
+            const statusClass =
+              status === "อยู่ในหอพัก" ? "status-in-dorm" : "status-out-dorm";
+
+            userDiv.innerHTML = `
+            <img src="${
+              user.pictureUrl
+            }" alt="รูปโปรไฟล์" class="profile-img" style="width: 50px; height: 50px; margin-right: 15px;">
+            <div>
+              <h5 class="mb-1">ชื่อผู้ใช้: ${user.displayName}</h5>
+              <h5 class="mb-1">รหัสผู้ใช้: ${user.user_id}</h5>
+              <p class="mb-1"><strong>หมายเลขห้อง:</strong> ${
+                user.roomNumber
+              }</p>
+              ${user.dms
+                .map(
+                  (dmInfo) => `
+                <p class="mb-1 ${dmClass(dmInfo.dm)}"><strong>DM:</strong> ${
+                    dmInfo.dm
+                  } (${dmMeaning[dmInfo.dm] || "ไม่ทราบ"})</p>
+                <p class="mb-1"><strong>เวลาที่ลงทะเบียน:</strong> ${new Date(
+                  dmInfo.latest
+                ).toLocaleString()}</p>
+              `
+                )
+                .join("")}
+              <p class="mt-2 ${statusClass}">สถานะ: ${status}</p>
+            </div>
+          `;
+            eventsDiv.appendChild(userDiv);
+          }
+        } catch (error) {
+          console.error("เกิดข้อผิดพลาดในการดึงข้อมูลเหตุการณ์:", error);
+        }
+      }
+
+      async function calculateStatus(userId) {
+        try {
+          const response = await fetch(`/calculate/${userId}`);
+          if (response.ok) {
+            const data = await response.json();
+            console.log(`Status for user ${userId}:`, data.status);
+
+            return data.status === "อยู่ในหอพัก"
+              ? "ไม่อยู่ในหอพัก"
+              : "อยู่ในหอพัก";
+          } else {
+            console.error("Error fetching status:", response.statusText);
+            return "ไม่สามารถคำนวณสถานะได้";
+          }
+        } catch (error) {
+          console.error("เกิดข้อผิดพลาดในการคำนวณสถานะ:", error);
+          return "ไม่สามารถคำนวณสถานะได้";
+        }
+      }
+
+      fetchEvents(); // เรียกใช้งานฟังก์ชันเพื่อดึงข้อมูลและแสดงผล
+    </script>
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.0/umd/popper.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+  </body>
+</html>

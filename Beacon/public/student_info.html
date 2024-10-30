@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="th">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ข้อมูลนักศึกษา</title>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+    />
+    <link
+      href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600&display=swap"
+      rel="stylesheet"
+    />
+    <link href="styles.css" rel="stylesheet" />
+  </head>
+
+  <style>
+    body,
+    html {
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      height: 100%;
+      width: 100%;
+      background: #fff;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      font-family: "Kanit", sans-serif;
+    }
+
+    nav {
+      width: 100%;
+      background-color: #d4af37;
+      color: rgb(0, 0, 0);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 10px 0;
+      position: fixed;
+      top: 0;
+      left: 0;
+      font-size: 20px;
+      font-family: "Kanit", sans-serif;
+      z-index: 1000;
+    }
+
+    .back-button {
+      position: absolute;
+      left: 10px;
+      background-color: #d4af37;
+      color: #000000;
+      border: none;
+      padding: 5px 10px;
+      cursor: pointer;
+      font-size: 16px;
+      font-weight: bold;
+      align-items: center;
+      font-family: "Kanit", sans-serif;
+    }
+
+    .back-button i {
+      margin-right: 5px;
+    }
+  </style>
+
+  <body>
+    <nav>
+      <button
+        class="back-button btn btn-link text-black"
+        onclick="history.back()"
+      >
+        <i class="fa-solid fa-chevron-left"></i>
+      </button>
+      รายชื่อนักศึกษา
+    </nav>
+
+    <div class="container mt-4">
+      <h1 class="mb-4">รายชื่อนักศึกษา</h1>
+      <table class="table table-bordered">
+        <thead>
+          <tr>
+            <th>รหัสผู้ใช้</th>
+            <th>รหัสนักศึกษา</th>
+            <th>ชื่อ</th>
+            <th>นามสกุล</th>
+            <th>หมายเลขห้อง</th>
+          </tr>
+        </thead>
+        <tbody id="studentTableBody">
+          <!-- ข้อมูลนักศึกษาจะถูกใส่ที่นี่ -->
+        </tbody>
+      </table>
+    </div>
+
+    <script>
+      // ฟังก์ชันสำหรับดึงข้อมูลนักศึกษาจาก API
+      async function fetchStudents() {
+        try {
+          const response = await fetch("/students"); // ดึงข้อมูลจาก API
+          if (!response.ok) {
+            throw new Error("HTTP error! status: " + response.status);
+          }
+          const students = await response.json(); // แปลงข้อมูลเป็น JSON
+
+          // เลือก table body สำหรับใส่ข้อมูล
+          const tableBody = document.getElementById("studentTableBody");
+          tableBody.innerHTML = ""; // ล้างข้อมูลเก่าก่อน
+
+          // วนลูปเพิ่มข้อมูลนักศึกษาแต่ละคนลงในตาราง
+          students.forEach((student) => {
+            const row = document.createElement("tr");
+            row.innerHTML = `
+              <td>${student.userId}</td>
+              <td>${student.student_id}</td>
+              <td>${student.first_name}</td>
+              <td>${student.last_name}</td>
+              <td>${student.room_number}</td>
+            `;
+            tableBody.appendChild(row); // เพิ่มแถวลงในตาราง
+          });
+        } catch (error) {
+          console.error("เกิดข้อผิดพลาดในการดึงข้อมูล:", error);
+        }
+      }
+
+      // เรียกใช้งานฟังก์ชันเมื่อโหลดหน้า
+      fetchStudents();
+    </script>
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.0/umd/popper.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+  </body>
+</html>

@@ -1,0 +1,873 @@
+<!DOCTYPE html>
+<html lang="th">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>คนที่อยู่ในหอพัก</title>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+    />
+    <!-- Bootstrap CSS -->
+    <link
+      <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link
+      href="https://stackpath.bootstrapcdn.com/bootstrap/5.3.0/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <!-- Kanit Font from Google Fonts -->
+    <link
+      href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600&display=swap"
+      rel="stylesheet"
+    />
+    <link href="styles.css" rel="stylesheet" />
+
+    <style>
+      body,
+      html {
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+        height: 100%;
+        width: 100%;
+        background: #fff;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        font-family: "Kanit", sans-serif;
+      }
+
+      nav {
+        width: 100%;
+        background-color: #7b1fa2;
+        color: rgb(255, 255, 255);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 10px 0;
+        position: fixed;
+        top: 0;
+        left: 0;
+        font-size: 20px;
+        font-family: "Kanit", sans-serif;
+        z-index: 1000; /* Ensure nav stays above other content */
+      }
+
+      .back-button {
+        position: absolute;
+        left: 10px;
+        background-color: #7b1fa2;
+        color: #000000;
+        border: none;
+        padding: 5px 10px;
+        cursor: pointer;
+        font-size: 16px;
+        font-weight: bold;
+        align-items: center;
+        font-family: "Kanit", sans-serif;
+      }
+
+      .back-button i {
+        margin-right: 5px;
+      }
+
+      #tooltip {
+        position: absolute;
+        background-color: #295d4d;
+        color: #fff;
+        padding: 15px;
+        border-radius: 8px;
+        font-size: 16px;
+        display: none;
+        z-index: 10;
+        max-width: 300px;
+        font-family: "Kanit", sans-serif;
+      }
+
+      #tooltip img {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        margin-bottom: 10px;
+      }
+
+      #tooltip h5 {
+        font-size: 19px;
+      }
+
+      #tooltip p {
+        font-size: 14px;
+        margin-bottom: 2px;
+      }
+
+      .content-container {
+        margin-top: 80px;
+        padding: 20px;
+        display: flex;
+        align-items: center; /* จัดปุ่มในแนวเดียวกัน */
+        justify-content: center; /* จัดให้อยู่ตรงกลางหน้าจอ */
+        gap: 10px; /* เว้นระยะห่างระหว่างปุ่ม */
+        width: 100%;
+        box-sizing: border-box;
+      }
+
+      .dropdown {
+        flex-shrink: 0; /* ไม่ให้ dropdown หดตัว */
+      }
+      .info-button {
+        text-align: center;
+      }
+
+      .info-button {
+        width: 90%;
+        max-width: 500px;
+        border: none;
+        border-radius: 15px;
+        text-align: center;
+        padding: 20px;
+        background-color: white;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        font-size: 18px;
+        font-weight: bold;
+        color: #295d4d;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .status-info {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        width: 100%;
+        margin-top: 15px;
+      }
+      .status-info div {
+        padding: 10px 20px;
+        border-radius: 10px;
+        color: white;
+        margin: 5px;
+        text-align: center;
+        font-size: 18px;
+      }
+
+      .status-info div:nth-child(1) {
+        background-color: #42bd41;
+      }
+
+      .status-info div:nth-child(2) {
+        background-color: #e51c23;
+      }
+
+      .canvas-container {
+        width: 100%;
+        display: flex;
+        justify-content: center;
+        margin-top: 20px;
+        flex-grow: 1;
+      }
+
+      .canvas-wrapper {
+        position: relative;
+        width: 100%;
+        max-width: 100%;
+        height: 400px;
+      }
+
+      @media (max-width: 576px) {
+        .info-button {
+          width: 100%;
+        }
+
+        .status-info div {
+          font-size: 14px; /* ขนาดตัวอักษรเล็กลงสำหรับหน้าจอขนาดเล็ก */
+        }
+      }
+      .filter-buttons {
+        margin-bottom: 20px;
+        display: flex;
+        justify-content: center;
+      }
+
+      .filter-btn {
+        padding: 10px 20px;
+        margin: 0 10px;
+        border: none;
+        border-radius: 10px;
+        background-color: #d4af37;
+        color: #fff;
+        cursor: pointer;
+        font-size: 16px;
+        font-family: "Kanit", sans-serif;
+        transition: background-color 0.3s ease;
+      }
+
+      .filter-btn:hover {
+        background-color: #c59730;
+      }
+      @media (max-width: 576px) {
+        .content-container {
+          flex-direction: column;
+          align-items: stretch; /* จัดปุ่มให้เต็มความกว้าง */
+        }
+        .dropdown,
+        .info-button {
+          width: 100%; /* ให้ dropdown และปุ่มแสดงข้อมูลเต็มความกว้าง */
+        }
+      }
+      .dropdown button {
+        background-color: #007bff; /* สีพื้นหลังของปุ่ม */
+        color: white; /* สีของตัวอักษร */
+        border: none; /* ลบเส้นขอบ */
+        padding: 10px 20px; /* ปรับขนาด */
+        border-radius: 5px; /* ทำขอบโค้งมน */
+        cursor: pointer; /* เปลี่ยนรูปแบบของเม้าส์เมื่อชี้ที่ปุ่ม */
+      }
+
+      .dropdown button:hover {
+        background-color: #0056b3; /* สีเมื่อเอาเม้าส์วางบนปุ่ม */
+      }
+
+      body,
+      html {
+        margin: 0;
+        padding: 0;
+        height: 100%;
+        font-family: Arial, sans-serif;
+      }
+
+      #refresh-logo {
+        position: fixed;
+        top: -100px; /* ซ่อนโลโก้ไว้ที่ด้านบนสุดของหน้าจอ */
+        left: 50%;
+        transform: translateX(-50%);
+        width: 50px;
+        height: 50px;
+        background-image: url("https://cdn-icons-png.flaticon.com/512/189/189687.png");
+        background-size: cover;
+        border-radius: 50%;
+        transition: top 0.3s ease;
+        z-index: 1000;
+      }
+
+      /* การหมุนของโลโก้ */
+      .spin {
+        animation: spin 1s linear infinite;
+      }
+
+      @keyframes spin {
+        from {
+          transform: translate(-50%, 30%) rotate(0deg); /* รักษาตำแหน่งกลางไว้ขณะหมุน */
+        }
+        to {
+          transform: translate(-50%, 30%) rotate(360deg); /* รักษาตำแหน่งกลางไว้ขณะหมุน */
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <div id="refresh-logo"></div>
+
+    <nav>
+      <button
+        class="back-button btn btn-link text-white"
+        onclick="history.back()"
+      >
+        <i class="fa-solid fa-chevron-left"></i>
+      </button>
+      Dashboard นักศึกษาที่อยู่ในหอพัก
+    </nav>
+
+    <div class="content-container">
+      <button class="info-button">
+        <div>จำนวนนักศึกษา</div>
+        <div class="status-info">
+          <div>กำลังโหลด...</div>
+          <div>กำลังโหลด...</div>
+        </div>
+      </button>
+
+      <!-- Dropdown เลือกห้อง -->
+      <!-- <div class="dropdown">
+        <button
+          class="btn btn-secondary dropdown-toggle"
+          type="button"
+          id="dropdownMenuButton"
+          data-bs-toggle="dropdown"
+          aria-expanded="false"
+        >
+          เลือกห้อง
+        </button>
+        <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+          <li>
+            <a class="dropdown-item" href="#" onclick="filterByRoom('all')"
+              >แสดงทั้งหมด</a
+            >
+          </li>
+          <li>
+            <a class="dropdown-item" href="#" onclick="filterByRoom('5224')"
+              >ห้อง 5224</a
+            >
+          </li>
+          <li>
+            <a class="dropdown-item" href="#" onclick="filterByRoom('5225')"
+              >ห้อง 5225</a
+            >
+          </li>
+          <li>
+            <a class="dropdown-item" href="#" onclick="filterByRoom('5226')"
+              >ห้อง 5226</a
+            >
+          </li>
+        </ul>
+
+        <ul class="dropdown-menu" id="floorList" aria-labelledby="dropdownFloorButton">
+          <li><a class="dropdown-item" href="#" onclick="filterByFloor(2)">ชั้น 2</a></li>
+          <li><a class="dropdown-item" href="#" onclick="filterByFloor(3)">ชั้น 3</a></li>
+          <li><a class="dropdown-item" href="#" onclick="filterByFloor(4)">ชั้น 4</a></li>
+        </ul>
+        
+      </div>
+    </div>
+     -->
+
+      <!-- Dropdown เลือกชั้น -->
+      <div class="dropdown">
+        <button
+          class="btn btn-secondary dropdown-toggle"
+          type="button"
+          id="dropdownFloorButton"
+          data-bs-toggle="dropdown"
+          aria-expanded="false"
+        >
+          เลือกชั้น
+        </button>
+        <ul
+          class="dropdown-menu"
+          id="floorList"
+          aria-labelledby="dropdownFloorButton"
+        >
+          <li>
+            <a class="dropdown-item" href="#" onclick="filterByFloor('all')"
+              >ทั้งหมด</a
+            >
+          </li>
+          <li>
+            <a class="dropdown-item" href="#" onclick="filterByFloor(2)"
+              >ชั้น 2</a
+            >
+          </li>
+          <li>
+            <a class="dropdown-item" href="#" onclick="filterByFloor(3)"
+              >ชั้น 3</a
+            >
+          </li>
+          <li>
+            <a class="dropdown-item" href="#" onclick="filterByFloor(4)"
+              >ชั้น 4</a
+            >
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="canvas-container">
+      <div class="canvas-wrapper">
+        <canvas id="myCanvas" class="w-200 h-200"></canvas>
+      </div>
+    </div>
+
+    <script>
+      function createTooltip() {
+        const tooltip = document.createElement("div");
+        tooltip.id = "tooltip";
+        document.body.appendChild(tooltip);
+        return tooltip;
+      }
+
+      const tooltip = createTooltip();
+      const canvas = document.getElementById("myCanvas");
+      const ctx = canvas.getContext("2d");
+      let imgRadius;
+      const balls = [];
+      const logoImg = new Image();
+      logoImg.src =
+        "https://upload.wikimedia.org/wikipedia/th/thumb/7/77/Silpakorn_University_Emblem.svg/1200px-Silpakorn_University_Emblem.svg.png";
+
+      function calculateBallSize() {
+        imgRadius = Math.max(25, Math.min(canvas.width, canvas.height) / 50);
+      }
+
+      async function fetchEvents() {
+        try {
+          const response = await fetch("/events");
+
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+          const events = await response.json();
+          console.log("Events data fetched:", events);
+
+          const groupedEvents = events.reduce((acc, event) => {
+            if (!acc[event.user_id]) {
+              acc[event.user_id] = {
+                user_id: event.user_id,
+                displayName: event.displayName,
+                pictureUrl: event.pictureUrl,
+                room_number: event.room_number, // ตรวจสอบว่าคุณดึงข้อมูลนี้จาก database
+                dms: [],
+              };
+            }
+            acc[event.user_id].dms.push({
+              dm: event.dm,
+              latest: event.latest,
+            });
+            return acc;
+          }, {});
+
+          balls.length = 0;
+
+          let countInDormitory = 0;
+          let countNotInDormitory = 0;
+
+          for (const user of Object.values(groupedEvents)) {
+            const latestEvent = user.dms.reduce((latest, current) => {
+              return new Date(current.latest) > new Date(latest.latest)
+                ? current
+                : latest;
+            }, user.dms[0]);
+
+            // เงื่อนไขที่ให้แสดงลูกบอลเฉพาะ "เข้าหอแล้ว"
+            if (latestEvent.dm === "a0a3b33145fe") {
+              countInDormitory++; // เข้าหอแล้ว
+              createBall(user, "#42bd41"); // สร้างลูกบอลสำหรับ dm ที่เข้าหอแล้ว (สีเขียว)
+            } else {
+              countNotInDormitory++; // ยังไม่กลับหอ
+              createBall(user, "#e51c23"); // สร้างลูกบอลสำหรับ dm ที่ยังไม่กลับหอ (สีแดง)
+            }
+          }
+
+          document.querySelector(
+            ".status-info div:nth-child(1)"
+          ).textContent = `อยู่หอพัก ${countInDormitory} คน`;
+          document.querySelector(
+            ".status-info div:nth-child(2)"
+          ).textContent = `ไม่อยู่หอพัก ${countNotInDormitory} คน`;
+        } catch (error) {
+          console.error("Error fetching events data:", error);
+        }
+      }
+
+      function createBall(user) {
+        const img = new Image();
+        img.src = user.pictureUrl;
+        img.onload = () => {
+          const padding = 10;
+          const startX = padding; // จุดเริ่มต้นในแกน x
+          const startY = padding + 20; // จุดเริ่มต้นในแกน y
+
+          balls.push({
+            user_id: user.user_id,
+            displayName: user.displayName,
+            pictureUrl: user.pictureUrl,
+            room_number: user.room_number,
+            dms: user.dms,
+            img,
+            x: startX + balls.length * (imgRadius * 2 + padding) + imgRadius, // วางลูกบอลต่อกันในแนวนอน
+            y: startY + imgRadius, // วางลูกบอลในตำแหน่งเดียวกันในแกน y
+            visible: true,
+          });
+
+          update();
+        };
+
+        img.onerror = () => {
+          console.error(`Failed to load user image ${user.user_id}`);
+        };
+      }
+
+      function drawImage(ball) {
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(ball.x, ball.y, imgRadius, 0, Math.PI * 2, true);
+        ctx.closePath();
+        ctx.clip();
+        ctx.drawImage(
+          ball.img,
+          ball.x - imgRadius,
+          ball.y - imgRadius,
+          imgRadius * 2,
+          imgRadius * 2
+        );
+        ctx.restore();
+
+        ctx.beginPath();
+        ctx.arc(ball.x, ball.y, imgRadius, 0, Math.PI * 2, true);
+        ctx.closePath();
+        ctx.strokeStyle = "#41826e";
+        ctx.lineWidth = 2;
+        ctx.stroke();
+      }
+
+      function drawBackground() {
+        const logoWidth = 0;
+        const logoHeight = 0;
+        const logoX = (canvas.width - logoWidth) / 2;
+        const logoY = (canvas.height - logoHeight) / 2;
+        ctx.drawImage(logoImg, logoX, logoY, logoWidth, logoHeight);
+      }
+
+      function update() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        drawBackground();
+
+        balls.forEach((ball) => {
+          drawImage(ball);
+        });
+      }
+
+      logoImg.onload = () => {
+        fetchEvents();
+      };
+
+      function resizeCanvas() {
+        canvas.width = window.innerWidth - 20;
+        canvas.height = window.innerHeight - 80;
+        calculateBallSize();
+        update();
+      }
+
+      window.addEventListener("resize", resizeCanvas);
+      resizeCanvas();
+
+      function handleTooltip(event) {
+        const rect = canvas.getBoundingClientRect();
+        const mouseX = event.clientX - rect.left;
+        const mouseY = event.clientY - rect.top;
+        let hoveredBall = null;
+
+        for (const ball of balls) {
+          const distance = Math.sqrt(
+            (mouseX - ball.x) ** 2 + (mouseY - ball.y) ** 2
+          );
+          if (distance < imgRadius) {
+            hoveredBall = ball;
+            break;
+          }
+        }
+
+        if (hoveredBall) {
+          const profile = hoveredBall;
+          tooltip.style.display = "block";
+          let tooltipX = event.pageX + 10;
+          let tooltipY = event.pageY + 10;
+
+          if (tooltipX + tooltip.offsetWidth > window.innerWidth) {
+            tooltipX = window.innerWidth - tooltip.offsetWidth - 10;
+          }
+          if (tooltipY + tooltip.offsetHeight > window.innerHeight) {
+            tooltipY = window.innerHeight - tooltip.offsetHeight - 10;
+          }
+
+          tooltip.style.left = `${tooltipX}px`;
+          tooltip.style.top = `${tooltipY}px`;
+
+          tooltip.innerHTML = `
+            <div class="card-body">
+              <img src="${
+                profile.pictureUrl
+              }" alt="Profile Picture" class="card-img-top mb-2">
+              <h5 class="card-title">ชื่อ: ${
+                profile.displayName || "ไม่พบข้อมูล"
+              }</h5>
+              <p class="card-text"><strong>รหัสผู้ใช้:</strong> ${
+                profile.user_id
+              }</p>
+              <p class="card-text"><strong>ห้อง:</strong> ${
+                profile.room_number || "ไม่พบข้อมูล"
+              }</p> <!-- แสดงข้อมูลห้องที่นี่ -->
+              ${profile.dms
+                .map(
+                  (dmInfo) => `
+                <p class="card-text mb-1" style="color: ${
+                  dmInfo.dm === "a0a3b33145fe" ? "#42bd41" : "#e84e40"
+                };">
+                  <strong>DM:</strong> ${dmInfo.dm}<br>
+                  <strong style="color: white;">เวลาที่ลงทะเบียน:</strong> ${new Date(
+                    dmInfo.latest
+                  ).toLocaleString()}
+                </p>
+              `
+                )
+                .join("")}
+            </div>
+          </div>
+        `;
+        } else {
+          tooltip.style.display = "none";
+        }
+      }
+
+      // Event listeners for mouse and touch events
+      canvas.addEventListener("mousemove", handleTooltip);
+      canvas.addEventListener("touchstart", (event) => {
+        const touch = event.touches[0];
+        handleTooltip({
+          clientX: touch.clientX,
+          clientY: touch.clientY,
+          pageX: touch.pageX,
+          pageY: touch.pageY,
+        });
+      });
+
+      setInterval(() => {
+        window.location.reload();
+      }, 60000);
+
+      function filterByRoom(roomNumber) {
+        // ถ้าหากเลือก "แสดงทั้งหมด"
+        if (roomNumber === "all") {
+          balls.forEach((ball) => {
+            ball.visible = true; // แสดงทุกห้อง
+          });
+        } else {
+          balls.forEach((ball) => {
+            if (ball.room_number === roomNumber) {
+              ball.visible = true; // แสดงเฉพาะห้องที่ตรงกับ roomNumber
+            } else {
+              ball.visible = false; // ซ่อนห้องอื่น
+            }
+          });
+        }
+        update(); // อัปเดตการแสดงผลใหม่
+      }
+
+      function drawImage(ball) {
+        if (!ball.visible) return; // ถ้า ball ถูกซ่อน จะไม่วาดภาพ
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(ball.x, ball.y, imgRadius, 0, Math.PI * 2, true);
+        ctx.closePath();
+        ctx.clip();
+        ctx.drawImage(
+          ball.img,
+          ball.x - imgRadius,
+          ball.y - imgRadius,
+          imgRadius * 2,
+          imgRadius * 2
+        );
+        ctx.restore();
+
+        ctx.beginPath();
+        ctx.arc(ball.x, ball.y, imgRadius, 0, Math.PI * 2, true);
+        ctx.closePath();
+
+        // ตรวจสอบว่า DM ของ user เป็น a0a3b32fadf2 หรือไม่
+        const latestEvent = ball.dms.reduce((latest, current) => {
+          return new Date(current.latest) > new Date(latest.latest)
+            ? current
+            : latest;
+        }, ball.dms[0]);
+
+        if (latestEvent.dm === "a0a3b32fadf2") {
+          ctx.strokeStyle = "#dd191d"; // ขอบสีแดง
+        } else {
+          ctx.strokeStyle = "#0a8f08"; // ขอบสีเขียวสำหรับค่าอื่นๆ
+        }
+
+        ctx.lineWidth = 2;
+        ctx.stroke();
+      }
+      function createBall(user) {
+        const img = new Image();
+        img.src = user.pictureUrl;
+        img.onload = () => {
+          const padding = 10;
+          let currentX = padding;
+          let currentY = padding + 20;
+
+          // กำหนดจำนวนลูกบอลต่อแถวให้สัมพันธ์กับขนาดหน้าจอ
+          const numBallsPerRow = Math.floor(
+            canvas.width / (imgRadius * 2 + padding)
+          );
+
+          // ปรับ padding ระหว่างลูกบอลให้สัมพันธ์กับขนาดหน้าจอ
+          const extraSpace =
+            (canvas.width - numBallsPerRow * imgRadius * 2) /
+            (numBallsPerRow + 1);
+
+          const col = balls.length % numBallsPerRow; // ตำแหน่งในแถวปัจจุบัน
+          const row = Math.floor(balls.length / numBallsPerRow); // เริ่มแถวใหม่เมื่อบอลเกินจากขอบจอ
+
+          // คำนวณตำแหน่งของลูกบอลโดยเพิ่มระยะ padding ให้พอดีกับจอ
+          currentX = extraSpace + col * (imgRadius * 2 + extraSpace);
+          currentY = padding + row * (imgRadius * 2 + extraSpace);
+
+          balls.push({
+            user_id: user.user_id,
+            displayName: user.displayName,
+            pictureUrl: user.pictureUrl,
+            room_number: user.room_number,
+            dms: user.dms,
+            img,
+            x: currentX + imgRadius, // คำนวณตำแหน่ง x
+            y: currentY + imgRadius, // คำนวณตำแหน่ง y
+            visible: true,
+          });
+
+          update();
+        };
+
+        img.onerror = () => {
+          console.error(`Failed to load user image ${user.user_id}`);
+        };
+      }
+
+      function filterByRoom(roomNumber) {
+        // ถ้าหากเลือก "แสดงทั้งหมด"
+        if (roomNumber === "all") {
+          balls.forEach((ball) => {
+            ball.visible = true; // แสดงทุกห้อง
+          });
+        } else {
+          balls.forEach((ball) => {
+            if (ball.room_number === roomNumber) {
+              ball.visible = true; // แสดงเฉพาะห้องที่ตรงกับ roomNumber
+            } else {
+              ball.visible = false; // ซ่อนห้องอื่น
+            }
+          });
+        }
+        update(); // อัปเดตการแสดงผลใหม่
+      }
+    </script>
+
+    <script>
+      async function fetchRooms() {
+        try {
+          // สมมติว่าได้รับข้อมูลห้องจาก API
+          const rooms = [
+            { room_number: "5224" },
+            { room_number: "5225" },
+            { room_number: "5324" },
+            { room_number: "5226" },
+            { room_number: "5425" },
+            { room_number: "5526" },
+          ];
+
+          // แสดงห้องใน dropdown
+          const roomList = document.getElementById("roomList");
+          roomList.innerHTML = "";
+          rooms.forEach((room) => {
+            const listItem = document.createElement("li");
+            listItem.innerHTML = `<a class="dropdown-item" href="#" onclick="filterByRoom('${room.room_number}')">${room.room_number}</a>`;
+            roomList.appendChild(listItem);
+          });
+
+          return rooms;
+        } catch (error) {
+          console.error("Error fetching rooms:", error);
+        }
+      }
+
+      // ฟังก์ชันสำหรับกรองห้องจากเลขชั้นที่สอง (เช่น 5224 => ชั้น 2)
+      async function filterByFloor(floor) {
+        const rooms = await fetchRooms();
+        const filteredRooms = rooms.filter(
+          (room) => room.room_number[1] == floor
+        );
+        console.log(`ห้องที่อยู่ชั้น ${floor}:`, filteredRooms);
+
+        // อัปเดต dropdown ห้อง
+        const roomList = document.getElementById("roomList");
+        roomList.innerHTML = "";
+        filteredRooms.forEach((room) => {
+          const listItem = document.createElement("li");
+          listItem.innerHTML = `<a class="dropdown-item" href="#" onclick="filterByRoom('${room.room_number}')">${room.room_number}</a>`;
+          roomList.appendChild(listItem);
+        });
+
+        // อัปเดตข้อความบนปุ่ม dropdown ที่แสดงชั้นที่เลือก
+        const dropdownButton = document.getElementById("dropdownFloorButton");
+        dropdownButton.innerHTML = `ชั้นที่เลือก ${floor}`;
+      }
+
+      function filterByFloor(floor) {
+        const dropdownButton = document.getElementById("dropdownFloorButton");
+
+        if (floor === "all") {
+          balls.forEach((ball) => {
+            ball.visible = true; // แสดงบอลลูนทั้งหมดเมื่อเลือก "ทั้งหมด"
+          });
+          dropdownButton.innerHTML = "แสดงทุกชั้น"; // อัปเดตข้อความเมื่อเลือก "ทั้งหมด"
+        } else {
+          balls.forEach((ball) => {
+            const roomNumber = ball.room_number;
+            if (roomNumber[1] == floor) {
+              ball.visible = true; // แสดงบอลลูนของห้องที่อยู่บนชั้นที่เลือก
+            } else {
+              ball.visible = false; // ซ่อนบอลลูนของห้องที่ไม่อยู่บนชั้นที่เลือก
+            }
+          });
+          dropdownButton.innerHTML = `ชั้นที่เลือก ${floor}`; // อัปเดตข้อความเมื่อเลือกชั้น
+        }
+        update(); // อัปเดตการแสดงผลบน canvas ใหม่
+      }
+
+      //รีเฟรชหน้าเว็บเมื่อสไลด์ลง
+      let startY = 0;
+      let isPullingDown = false;
+      let isRefreshing = false;
+
+      const logo = document.getElementById("refresh-logo");
+
+      // ตรวจจับการสัมผัสเริ่มต้น
+      window.addEventListener("touchstart", function (event) {
+        if (isRefreshing) return; // ถ้ารีเฟรชอยู่แล้ว ให้หยุดทำงาน
+
+        startY = event.touches[0].clientY;
+        isPullingDown = false;
+      });
+
+      // ตรวจจับการเลื่อน
+      window.addEventListener("touchmove", function (event) {
+        if (isRefreshing) return; // ถ้ารีเฟรชอยู่แล้ว ให้หยุดทำงาน
+
+        let currentY = event.touches[0].clientY;
+
+        // ตรวจสอบว่าผู้ใช้กำลังสไลด์ลงและอยู่ที่ด้านบนสุดของหน้าจอ
+        if (currentY > startY && window.scrollY === 0) {
+          isPullingDown = true;
+          logo.style.top = `${Math.min((currentY - startY) / 2, 80)}px`; // ขยับโลโก้ตามการสไลด์
+        }
+      });
+
+      // ตรวจจับเมื่อผู้ใช้ปล่อยการสัมผัส
+      window.addEventListener("touchend", function (event) {
+        if (isPullingDown) {
+          isRefreshing = true;
+          logo.classList.add("spin"); // เพิ่มคลาสให้โลโก้หมุน
+          logo.style.top = "40px"; // ขยับโลโก้มาที่ตำแหน่งกลาง
+
+          // รอ 1.5 วินาทีเพื่อให้เห็นการหมุน จากนั้นรีเฟรชหน้าเว็บ
+          setTimeout(() => {
+            window.location.reload();
+          }, 1500);
+        } else {
+          logo.style.top = "-100px"; // หากไม่ได้สไลด์มากพอ ซ่อนโลโก้
+        }
+      });
+    </script>
+
+    <!-- Bootstrap JS Bundle with Popper -->
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    <!-- Bootstrap JS Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  </body>
+</html>

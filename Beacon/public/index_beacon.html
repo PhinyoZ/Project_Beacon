@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="th">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Beacon</title>
+    <link
+      href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600&display=swap"
+      rel="stylesheet"
+    />
+    <link href="beacon_styles.css" rel="stylesheet" />
+  </head>
+
+  <body>
+    <div class="container">
+      <h1 class="mb-4">จัดการอุปกรณ์บีคอนและสถานะผู้ใช้</h1>
+
+      <h2 class="mb-4">ข้อมูลบีคอน</h2>
+      <div id="beacons" class="list-group mb-5"></div>
+
+      <h2 class="mb-4">สถานะผู้ใช้</h2>
+      <button id="manage-beacons" class="btn btn-primary mb-4">
+        จัดการบีคอน
+      </button>
+      <div id="events" class="list-group"></div>
+    </div>
+
+    <script>
+      // ตัวแปร dmMeaning ที่จะเปลี่ยนเมื่อกดปุ่มจัดการบีคอน
+      let dmMeaning = {
+        a0a3b33145fe: "ทางขึ้นบรรได เข้าหอพัก",
+        a0a3b32fadf2: "ประตูทางเข้า ออกหอพัก",
+      };
+
+      // ฟังก์ชันดึงข้อมูลจากตาราง beacon_place เมื่อกดปุ่มจัดการบีคอน
+      async function manageBeacons() {
+        try {
+          const response = await fetch("/beacon_places"); // สร้าง API ใหม่ที่ดึงข้อมูลจากตาราง beacon_place
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+          const beaconPlaces = await response.json(); // รับข้อมูล beacon_place จาก backend
+          console.log("Beacon places data fetched:", beaconPlaces);
+
+          // แทนที่ dmMeaning ด้วยข้อมูลจากตาราง beacon_place
+          dmMeaning = {};
+          beaconPlaces.forEach((place) => {
+            dmMeaning[place.dm] = place.place_description;
+          });
+
+          console.log("Updated dmMeaning with beacon places:", dmMeaning);
+
+          // เรียกฟังก์ชัน fetchEvents อีกครั้งเพื่ออัพเดตข้อมูลที่แสดงผล
+          fetchEvents();
+        } catch (error) {
+          console.error("เกิดข้อผิดพลาดในการดึงข้อมูล beacon_place:", error);
+        }
+      }
+
+      // เพิ่ม event listener ให้ปุ่มกดเรียกฟังก์ชัน manageBeacons
+      document
+        .getElementById("manage-beacons")
+        .addEventListener("click", manageBeacons);
+
+      // ฟังก์ชันดึงข้อมูลบีคอนจากตาราง beacons
+      async function fetchBeacons() {
+        try {
+          const response = await fetch("/beacons");
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+          const beacons = await response.json();
+          console.log("Beacons data fetched:", beacons);
+
+          const beaconsDiv = document.getElementById("beacons");
+          beaconsDiv.innerHTML = "";
+
+          // แสดงข้อมูลบีคอน
+          beacons.forEach((beacon) => {
+            const beaconDiv = document.createElement("div");
+            beaconDiv.classList.add(
+              "list-group-item",
+              "list-group-item-action",
+              "d-flex",
+              "align-items-center"
+            );
+
+            beaconDiv.innerHTML = `
+              <div>
+                <h5 class="mb-1">ชื่อบีคอน: ${beacon.beacon_name}</h5>
+                <p class="mb-1"><strong>DM:</strong> ${beacon.dm}</p>
+                <p class="mb-1"><strong>ตำแหน่งบีคอน:</strong> ${beacon.beacon_place}</p>
+              </div>
+            `;
+            beaconsDiv.appendChild(beaconDiv);
+          });
+        } catch (error) {
+          console.error("เกิดข้อผิดพลาดในการดึงข้อมูลบีคอน:", error);
+        }
+      }
+
+      fetchBeacons(); // เรียกใช้งานฟังก์ชันเพื่อดึงข้อมูลบีคอน
+
+      // ฟังก์ชันดึงข้อมูลเหตุการณ์และสถานะผู้ใช้
+      async function fetchEvents() {
+        try {
+          const response = await fetch("/events");
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+          const events = await response.json();
+          console.log("Events data fetched:", events);
+
+          const groupedEvents = events.reduce((acc, event) => {
+            if (!acc[event.user_id]) {
+              acc[event.user_id] = {
+                user_id: event.user_id,
+                displayName: event.displayName || "ไม่ทราบชื่อผู้ใช้",
+                pictureUrl: event.pictureUrl || "default.jpg", // ใช้รูปภาพเริ่มต้นหากไม่มีรูป
+                roomNumber: event.room_number || "ยังไม่ได้ลงทะเบียน", // หากไม่มี room_number ให้แสดงว่า "ยังไม่ได้ลงทะเบียน"
+                dms: [],
+              };
+            }
+            acc[event.user_id].dms.push({
+              dm: event.dm,
+              latest: event.latest,
+            });
+            return acc;
+          }, {});
+
+          const eventsDiv = document.getElementById("events");
+          eventsDiv.innerHTML = "";
+
+          for (const user of Object.values(groupedEvents)) {
+            const status = await calculateStatus(user.user_id);
+
+            const userDiv = document.createElement("div");
+            userDiv.classList.add(
+              "list-group-item",
+              "list-group-item-action",
+              "d-flex",
+              "align-items-center"
+            );
+
+            const dmClass = (dm) =>
+              dmMeaning[dm] ? "dm-custom" : "dm-default";
+
+            const statusClass =
+              status === "อยู่ในหอพัก" ? "status-in-dorm" : "status-out-dorm";
+
+            userDiv.innerHTML = `
+            <img src="${
+              user.pictureUrl
+            }" alt="รูปโปรไฟล์" class="profile-img" style="width: 50px; height: 50px; margin-right: 15px;">
+            <div>
+              <h5 class="mb-1">ชื่อผู้ใช้: ${user.displayName}</h5>
+              <h5 class="mb-1">รหัสผู้ใช้: ${user.user_id}</h5>
+              <p class="mb-1"><strong>หมายเลขห้อง:</strong> ${
+                user.roomNumber
+              }</p>
+              ${user.dms
+                .map(
+                  (dmInfo) => `
+                <p class="mb-1 ${dmClass(dmInfo.dm)}"><strong>DM:</strong> ${
+                    dmInfo.dm
+                  } (${dmMeaning[dmInfo.dm] || "ไม่ทราบ"})</p>
+                <p class="mb-1"><strong>เวลาที่ลงทะเบียน:</strong> ${new Date(
+                  dmInfo.latest
+                ).toLocaleString()}</p>
+              `
+                )
+                .join("")}
+              <p class="mt-2 ${statusClass}">สถานะ: ${status}</p>
+            </div>
+          `;
+            eventsDiv.appendChild(userDiv);
+          }
+        } catch (error) {
+          console.error("เกิดข้อผิดพลาดในการดึงข้อมูลเหตุการณ์:", error);
+        }
+      }
+
+      async function calculateStatus(userId) {
+        try {
+          const response = await fetch(`/calculate/${userId}`);
+          if (response.ok) {
+            const data = await response.json();
+            console.log(`Status for user ${userId}:`, data.status);
+
+            return data.status === "อยู่ในหอพัก"
+              ? "ไม่อยู่ในหอพัก"
+              : "อยู่ในหอพัก";
+          } else {
+            console.error("Error fetching status:", response.statusText);
+            return "ไม่สามารถคำนวณสถานะได้";
+          }
+        } catch (error) {
+          console.error("เกิดข้อผิดพลาดในการคำนวณสถานะ:", error);
+          return "ไม่สามารถคำนวณสถานะได้";
+        }
+      }
+
+      fetchEvents(); // เรียกใช้งานฟังก์ชันเพื่อดึงข้อมูลและแสดงผลเหตุการณ์
+    </script>
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.0/umd/popper.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+  </body>
+</html>
