@@ -1,8 +1,8 @@
 <?php
-$servername = "82.197.83.2";
-$username = "u897086378_LINEBEACONDB";
-$password = "@Devilkung123";
-$dbname = "u897086378_LINEBEACONDB";
+$servername = "";
+$username = "";
+$password = "";
+$dbname = "";
 
 // สร้างการเชื่อมต่อ
 $conn = new mysqli($servername, $username, $password, $dbname);
